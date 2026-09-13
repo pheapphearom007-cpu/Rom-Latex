@@ -1,0 +1,189 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-serif: "Source Serif 4", "Georgia", serif;
+  --font-mono: "IBM Plex Mono", "ui-monospace", monospace;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+  --radius: 0.75rem;
+  --background: #f7f5f1;
+  --foreground: #1c1917;
+  --card: #fffcf8;
+  --card-foreground: #1c1917;
+  --popover: #fffcf8;
+  --popover-foreground: #1c1917;
+  --primary: #1f3d5c;
+  --primary-foreground: #f8fafc;
+  --secondary: #efe8dc;
+  --secondary-foreground: #1c1917;
+  --muted: #efeae2;
+  --muted-foreground: #57534e;
+  --accent: #0f766e;
+  --accent-foreground: #f0fdfa;
+  --destructive: #b42318;
+  --border: #e7e0d4;
+  --input: #e7e0d4;
+  --ring: #1f3d5c;
+  --success: #157a4b;
+  --warning: #b45309;
+}
+
+.dark {
+  --background: #121417;
+  --foreground: #ece7e1;
+  --card: #1a1e23;
+  --card-foreground: #ece7e1;
+  --popover: #1a1e23;
+  --popover-foreground: #ece7e1;
+  --primary: #9ec5e8;
+  --primary-foreground: #0f1720;
+  --secondary: #252a31;
+  --secondary-foreground: #ece7e1;
+  --muted: #22272e;
+  --muted-foreground: #a8a29a;
+  --accent: #2dd4bf;
+  --accent-foreground: #042f2e;
+  --destructive: #f87171;
+  --border: #2c333c;
+  --input: #2c333c;
+  --ring: #9ec5e8;
+  --success: #4ade80;
+  --warning: #fbbf24;
+}
+
+* {
+  border-color: var(--border);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.latex-preview {
+  font-family: var(--font-serif);
+  line-height: 1.75;
+  color: inherit;
+}
+
+.latex-preview h1,
+.latex-preview h2,
+.latex-preview h3 {
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
+.latex-preview h1 {
+  font-size: 1.75rem;
+  margin: 0 0 0.75rem;
+}
+
+.latex-preview h2 {
+  font-size: 1.35rem;
+  margin: 1.5rem 0 0.5rem;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.latex-preview h3 {
+  font-size: 1.1rem;
+  margin: 1.15rem 0 0.4rem;
+}
+
+.latex-preview p {
+  margin: 0.65rem 0;
+}
+
+.latex-preview ul,
+.latex-preview ol {
+  margin: 0.5rem 0 0.5rem 1.25rem;
+}
+
+.latex-preview table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.75rem 0;
+  font-size: 0.95rem;
+}
+
+.latex-preview th,
+.latex-preview td {
+  border: 1px solid var(--border);
+  padding: 0.4rem 0.6rem;
+  text-align: left;
+}
+
+.latex-preview .title-block {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.latex-preview .abstract {
+  margin: 1rem 0;
+  padding: 0.85rem 1rem;
+  background: var(--muted);
+  border-radius: 0.75rem;
+}
+
+.latex-preview .figure-placeholder {
+  border: 1px dashed var(--border);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  text-align: center;
+  color: var(--muted-foreground);
+  margin: 0.75rem 0;
+}
+
+.latex-preview .comment {
+  color: var(--muted-foreground);
+  font-style: italic;
+}
