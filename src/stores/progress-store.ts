@@ -133,7 +133,22 @@ export const useProgressStore = create<ProgressStore>()(
       resetLocal: () => set(empty),
       hydrateRemote: (partial) => set({ ...get(), ...partial }),
     }),
-    { name: 'learn-latex-progress' },
+    {
+      name: 'learn-latex-progress',
+      merge: (persistedState, currentState) => {
+        const p = (persistedState as Partial<UserProgressState>) || {}
+        return {
+          ...currentState,
+          ...p,
+          completedLessonIds: Array.isArray(p.completedLessonIds) ? p.completedLessonIds : [],
+          completedExerciseIds: Array.isArray(p.completedExerciseIds) ? p.completedExerciseIds : [],
+          exerciseAttempts: p.exerciseAttempts && typeof p.exerciseAttempts === 'object' ? p.exerciseAttempts : {},
+          bookmarks: Array.isArray(p.bookmarks) ? p.bookmarks : [],
+          unlockedAchievementIds: Array.isArray(p.unlockedAchievementIds) ? p.unlockedAchievementIds : [],
+          activity: Array.isArray(p.activity) ? p.activity : [],
+        }
+      },
+    },
   ),
 )
 

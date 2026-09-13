@@ -48,9 +48,11 @@ export function CourseOverviewPage() {
           <Progress value={percent} />
           <p className="text-sm">{percent}% · {done} completed</p>
         </div>
-        <Button className="mt-4" asChild onClick={() => setCurrent(course.id)}>
-          <Link to={`/learn/${course.slug}/${next.slug}`}>Continue learning</Link>
-        </Button>
+        {next && (
+          <Button className="mt-4" asChild onClick={() => setCurrent(course.id)}>
+            <Link to={`/learn/${course.slug}/${next.slug}`}>Continue learning</Link>
+          </Button>
+        )}
       </div>
       <div className="space-y-3">
         {lessons.map((lesson, index) => {

@@ -34,7 +34,7 @@ export function AppShell() {
   const preference = useThemeStore((s) => s.preference)
   const setPreference = useThemeStore((s) => s.setPreference)
   const location = useLocation()
-  const completed = useProgressStore((s) => s.completedLessonIds.length)
+  const completed = useProgressStore((s) => s.completedLessonIds?.length ?? 0)
 
   return (
     <div className="min-h-screen bg-background">
