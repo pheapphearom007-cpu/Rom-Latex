@@ -44,7 +44,7 @@ export function AppShell() {
       <header className="sticky top-0 z-30 border-b border-border bg-background/90 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-7xl items-center gap-3 px-4">
           <Link to="/" className="font-serif text-lg font-semibold tracking-tight">
-            Learn LaTeX
+            ROM LATEX
           </Link>
           <nav className="ml-6 hidden items-center gap-1 lg:flex" aria-label="Primary">
             {links.map((link) => (
@@ -132,7 +132,7 @@ export function MarketingShell() {
       <header className="sticky top-0 z-30 border-b border-border bg-background/90 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4">
           <Link to="/" className="font-serif text-lg font-bold tracking-tight">
-            Learn LaTeX
+            ROM LATEX
           </Link>
           <nav className="flex items-center gap-4 text-sm">
             <Link to="/learn" className="hidden sm:inline hover:text-accent transition-colors">
@@ -169,7 +169,7 @@ export function MarketingShell() {
       <footer className="border-t border-border bg-card/50 py-12 text-sm text-muted-foreground">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-6 px-4 sm:flex-row">
           <div className="flex items-center gap-2 font-serif text-base font-semibold text-foreground">
-            Learn LaTeX
+            ROM LATEX
           </div>
           <div className="flex flex-wrap justify-center gap-6 text-xs">
             <Link to="/learn" className="hover:underline">Curriculum</Link>
