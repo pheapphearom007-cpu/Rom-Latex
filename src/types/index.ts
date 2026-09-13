@@ -94,7 +94,7 @@ export type Achievement = {
   icon: string
 }
 
-export type BookmarkType = 'lesson' | 'command' | 'example'
+export type BookmarkType = 'lesson' | 'command' | 'example' | 'note'
 
 export type Bookmark = {
   id: string
@@ -103,6 +103,8 @@ export type Bookmark = {
   title: string
   href: string
   createdAt: string
+  note?: string
+  updatedAt?: string
 }
 
 export type ActivityItem = {

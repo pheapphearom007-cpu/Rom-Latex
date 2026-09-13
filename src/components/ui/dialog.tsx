@@ -34,3 +34,8 @@ export function DialogHeader({ className, ...props }: HTMLAttributes<HTMLDivElem
 export function DialogTitle({ className, ...props }: DialogPrimitive.DialogTitleProps) {
   return <DialogPrimitive.Title className={cn('font-serif text-lg font-semibold', className)} {...props} />
 }
+
+export function DialogDescription({ className, ...props }: DialogPrimitive.DialogDescriptionProps) {
+  return <DialogPrimitive.Description className={cn('text-sm text-muted-foreground', className)} {...props} />
+}
+

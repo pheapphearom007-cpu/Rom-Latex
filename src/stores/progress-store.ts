@@ -46,7 +46,10 @@ type ProgressStore = UserProgressState & {
   markExerciseComplete: (exerciseId: string, title: string) => void
   registerAttempt: (exerciseId: string) => void
   addSeconds: (seconds: number) => void
-  toggleBookmark: (bookmark: Omit<Bookmark, 'id' | 'createdAt'> & { type: BookmarkType }) => void
+  toggleBookmark: (bookmark: Omit<Bookmark, 'id' | 'createdAt'> & { type: BookmarkType; note?: string }) => void
+  updateBookmarkNote: (id: string, note: string) => void
+  addCustomNote: (title: string, note: string) => void
+  removeBookmarkById: (id: string) => void
   isBookmarked: (type: BookmarkType, targetId: string) => boolean
   touchStreak: () => void
   setCurrentCourse: (courseId: string) => void
@@ -141,6 +144,40 @@ export const useProgressStore = create<ProgressStore>()(
             ]
         set({ bookmarks })
         void syncBookmark(bookmark, !existing)
+        schedulePushRemoteProgress()
+      },
+      updateBookmarkNote: (id, note) => {
+        const state = get()
+        const bookmarks = state.bookmarks.map((b) =>
+          b.id === id ? { ...b, note, updatedAt: new Date().toISOString() } : b,
+        )
+        set({ bookmarks })
+        schedulePushRemoteProgress()
+      },
+      addCustomNote: (title, note) => {
+        const state = get()
+        const id = crypto.randomUUID()
+        const newNote: Bookmark = {
+          id,
+          type: 'note',
+          targetId: `note-${id}`,
+          title: title.trim() || 'Untitled Note',
+          href: '/bookmarks',
+          note: note.trim(),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        }
+        set({ bookmarks: [newNote, ...state.bookmarks] })
+        schedulePushRemoteProgress()
+      },
+      removeBookmarkById: (id) => {
+        const state = get()
+        const item = state.bookmarks.find((b) => b.id === id)
+        const bookmarks = state.bookmarks.filter((b) => b.id !== id)
+        set({ bookmarks })
+        if (item) {
+          void syncBookmark(item, false)
+        }
         schedulePushRemoteProgress()
       },
       isBookmarked: (type, targetId) =>
