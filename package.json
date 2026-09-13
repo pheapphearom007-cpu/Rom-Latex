@@ -5,10 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "start": "vite",
-    "build": "tsc -b && vite build && node -e \"const fs = require('fs'); fs.cpSync('dist', 'build', { recursive: true });\"",
+    "start": "node server.js",
+    "build": "tsc -b && vite build && node scripts/postbuild.js",
     "lint": "oxlint",
     "preview": "vite preview"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
