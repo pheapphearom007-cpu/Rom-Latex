@@ -66,7 +66,7 @@ Visual labels used throughout:
 - **Chapter 15: Writing Academic Documents** (*រចនាសម្ព័ន្ធរបាយការណ៍ សារណា និក្ខេបបទ និងសារព័ត៌មានវិទ្យាសាស្ត្រ*)
 
 ### [PART 6 — Advanced LaTeX (កម្រិតខ្ពស់)](file:///home/phirom/Documents/code/learn-latex/book/part6-advanced.md)
-- **Chapter 17: Packages & Package Management** (*ការប្រើប្រាស់និងជ្រើសរើស packages សំខាន់ៗ*)
+- **Chapter 16: Packages & Package Management** (*ការប្រើប្រាស់និងជ្រើសរើស packages សំខាន់ៗ*)
 - **Chapter 17: Custom Commands & Environments** (*ការបង្កើតពាក្យបញ្ជាថ្មី newcommand និងបរិស្ថាន newenvironment*)
 - **Chapter 18: Page Layout & Geometry** (*ការកំណត់គម្លាតគែមក្រដាស margins, ក្បាលទំព័រ និងបាតទំព័រ fancyhdr*)
 - **Chapter 19: Colors, Fonts & Modern Typography** (*ការប្រើប្រាស់ពណ៌ xcolor, ពុម្ពអក្សរ និងរចនាប័ទ្មសម័យទំនើប*)
