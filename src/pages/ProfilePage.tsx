@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   AlertTriangle,
@@ -6,12 +6,16 @@ import {
   Bookmark,
   Check,
   Clock,
+  Cloud,
   Download,
   Flame,
   GraduationCap,
+  Loader2,
   LogOut,
   Moon,
+  RefreshCw,
   RotateCcw,
+  Save,
   Sun,
   Upload,
   UserCheck,
@@ -29,11 +33,15 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 import { EXERCISES } from '@/data/exercises'
 import { LESSONS } from '@/data/lessons'
 import { useAuth } from '@/features/auth/use-auth'
+import { supabase } from '@/lib/supabase'
 import { formatMinutes } from '@/lib/utils'
-import { useProgressStore } from '@/stores/progress-store'
+import { pullRemoteProgress, pushRemoteProgress, useProgressStore } from '@/stores/progress-store'
 import { useThemeStore } from '@/stores/theme-store'
 
 export function ProfilePage() {
@@ -54,6 +62,98 @@ export function ProfilePage() {
   const [importNotice, setImportNotice] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  // Profile form state
+  const [displayName, setDisplayName] = useState(
+    () => (user?.user_metadata?.display_name as string | undefined) || user?.email?.split('@')[0] || '',
+  )
+  const [bio, setBio] = useState('')
+  const [isSavingProfile, setIsSavingProfile] = useState(false)
+  const [profileMessage, setProfileMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null)
+
+  // Cloud sync state
+  const [isSyncing, setIsSyncing] = useState(false)
+  const [syncNotice, setSyncNotice] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!user || !supabase) return
+    let active = true
+    void supabase
+      .from('profiles')
+      .select('display_name, bio')
+      .eq('id', user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!active) return
+        if (data) {
+          setDisplayName(data.display_name || user.user_metadata?.display_name || '')
+          setBio(data.bio || '')
+        } else {
+          setDisplayName(user.user_metadata?.display_name || user.email?.split('@')[0] || '')
+        }
+      })
+    return () => {
+      active = false
+    }
+  }, [user])
+
+  async function handleSaveProfile(e: React.FormEvent) {
+    e.preventDefault()
+    if (!supabase || !user) return
+    setIsSavingProfile(true)
+    setProfileMessage(null)
+    try {
+      const trimmedName = displayName.trim()
+      const trimmedBio = bio.trim()
+
+      const { error } = await supabase.from('profiles').upsert({
+        id: user.id,
+        display_name: trimmedName,
+        bio: trimmedBio,
+        updated_at: new Date().toISOString(),
+      })
+      if (error) throw error
+
+      await supabase.auth.updateUser({
+        data: { display_name: trimmedName },
+      })
+
+      setProfileMessage({ text: 'Profile updated successfully!', type: 'success' })
+      window.setTimeout(() => setProfileMessage(null), 3000)
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to save profile'
+      setProfileMessage({ text: msg, type: 'error' })
+    } finally {
+      setIsSavingProfile(false)
+    }
+  }
+
+  async function handleManualSync() {
+    if (!supabase || !user) return
+    setIsSyncing(true)
+    setSyncNotice(null)
+    try {
+      await pullRemoteProgress()
+      await pushRemoteProgress()
+      setSyncNotice('Progress successfully synced with cloud!')
+      window.setTimeout(() => setSyncNotice(null), 3000)
+    } catch {
+      setSyncNotice('Failed to sync. Please check your internet connection.')
+      window.setTimeout(() => setSyncNotice(null), 4000)
+    } finally {
+      setIsSyncing(false)
+    }
+  }
+
+  function handleThemeChange(key: 'system' | 'light' | 'dark') {
+    setPreference(key)
+    if (supabase && user) {
+      void supabase
+        .from('profiles')
+        .update({ theme: key, updated_at: new Date().toISOString() })
+        .eq('id', user.id)
+    }
+  }
+
   function exportData() {
     const state = useProgressStore.getState()
     const dataStr = JSON.stringify(state, null, 2)
@@ -61,7 +161,7 @@ export function ProfilePage() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `learn-latex-backup-${new Date().toISOString().slice(0, 10)}.json`
+    a.download = `rom-latex-backup-${new Date().toISOString().slice(0, 10)}.json`
     a.click()
     URL.revokeObjectURL(url)
   }
@@ -88,7 +188,7 @@ export function ProfilePage() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-8">
-      <Seo title="User Profile & Settings — Learn LaTeX" description="Manage your account, preferences, and learning progress." />
+      <Seo title="User Profile & Settings — ROM LATEX" description="Manage your account, preferences, and learning progress." />
 
       <div>
         <h1 className="font-serif text-3xl font-bold tracking-tight md:text-4xl">Profile & Settings</h1>
@@ -104,29 +204,119 @@ export function ProfilePage() {
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
                 {user ? <UserCheck className="h-6 w-6" /> : <UserRound className="h-6 w-6" />}
               </div>
-              <div>
-                <CardTitle className="text-xl font-semibold">
-                  {user ? (user.user_metadata?.display_name || user.email?.split('@')[0]) : 'Guest Learner'}
+              <div className="min-w-0 flex-1">
+                <CardTitle className="truncate text-xl font-semibold">
+                  {displayName || (user ? user.email?.split('@')[0] : 'Guest Learner')}
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="truncate">
                   {user ? user.email : 'Local Storage Mode · Progress is saved in this browser'}
                 </CardDescription>
               </div>
             </div>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-5">
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant={user ? 'success' : 'secondary'}>
                 {user ? 'Cloud Synced' : 'Guest Account'}
               </Badge>
               {configured ? (
-                <Badge variant="outline">Supabase Auth Connected</Badge>
+                <Badge variant="outline">Supabase Connected</Badge>
               ) : (
                 <Badge variant="outline">Offline / Demo Mode</Badge>
               )}
             </div>
 
-            {!user && (
+            {user ? (
+              <div className="space-y-5">
+                {/* Cloud Sync Status & Action */}
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-muted/30 p-3.5 text-sm">
+                  <div className="flex items-center gap-2.5">
+                    <Cloud className="h-4 w-4 text-accent" />
+                    <div>
+                      <p className="font-medium">Cloud Progress Sync</p>
+                      <p className="text-xs text-muted-foreground">
+                        Your lessons, exercises, streak, and bookmarks sync automatically.
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => void handleManualSync()}
+                    disabled={isSyncing}
+                  >
+                    <RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
+                    {isSyncing ? 'Syncing...' : 'Sync Now'}
+                  </Button>
+                </div>
+                {syncNotice && (
+                  <div className="rounded-md border border-accent/40 bg-accent/10 px-3 py-2 text-xs font-medium text-foreground">
+                    {syncNotice}
+                  </div>
+                )}
+
+                {/* Profile Edit Form */}
+                <form onSubmit={(e) => void handleSaveProfile(e)} className="space-y-4 rounded-lg border border-border p-4">
+                  <h3 className="font-serif text-base font-semibold">Profile Details</h3>
+
+                  {profileMessage && (
+                    <div
+                      className={`rounded-md border px-3 py-2 text-xs font-medium ${
+                        profileMessage.type === 'success'
+                          ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                          : 'border-destructive/40 bg-destructive/10 text-destructive'
+                      }`}
+                    >
+                      {profileMessage.text}
+                    </div>
+                  )}
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="display-name">Display Name</Label>
+                    <Input
+                      id="display-name"
+                      value={displayName}
+                      onChange={(e) => setDisplayName(e.target.value)}
+                      placeholder="Your display name"
+                      maxLength={60}
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="bio">Bio & Learning Goals</Label>
+                    <Textarea
+                      id="bio"
+                      value={bio}
+                      onChange={(e) => setBio(e.target.value)}
+                      placeholder="E.g., Learning LaTeX for writing research papers and thesis..."
+                      rows={3}
+                      maxLength={300}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between pt-1">
+                    <Button type="submit" size="sm" disabled={isSavingProfile}>
+                      {isSavingProfile ? (
+                        <>
+                          <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="mr-1.5 h-4 w-4" />
+                          Save Profile
+                        </>
+                      )}
+                    </Button>
+
+                    <Button variant="ghost" size="sm" type="button" onClick={() => void signOut()}>
+                      <LogOut className="mr-1.5 h-4 w-4 text-muted-foreground" />
+                      Sign Out
+                    </Button>
+                  </div>
+                </form>
+              </div>
+            ) : (
               <div className="rounded-lg border border-border bg-muted/40 p-4 text-sm">
                 <p className="font-medium">Want to sync your progress across devices?</p>
                 <p className="mt-1 text-xs text-muted-foreground">
@@ -138,15 +328,6 @@ export function ProfilePage() {
                     <Link to="/login">Sign in or Create account</Link>
                   </Button>
                 </div>
-              </div>
-            )}
-
-            {user && (
-              <div className="pt-2">
-                <Button variant="outline" size="sm" onClick={() => void signOut()}>
-                  <LogOut className="mr-1.5 h-4 w-4" />
-                  Sign Out
-                </Button>
               </div>
             )}
           </CardContent>
@@ -168,7 +349,7 @@ export function ProfilePage() {
               <button
                 key={key}
                 type="button"
-                onClick={() => setPreference(key)}
+                onClick={() => handleThemeChange(key)}
                 className={`flex w-full items-center justify-between rounded-lg border px-3 py-2 text-sm transition-colors ${
                   preference === key
                     ? 'border-accent bg-accent/10 font-medium text-foreground'

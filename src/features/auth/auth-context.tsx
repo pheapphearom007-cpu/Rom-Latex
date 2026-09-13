@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import type { Session, User } from '@supabase/supabase-js'
 import { isSupabaseConfigured, supabase } from '@/lib/supabase'
+import { pullRemoteProgress, useProgressStore } from '@/stores/progress-store'
 import { AuthContext, type AuthContextValue } from './auth-context-definition'
 
 const GUEST_KEY = 'learn-latex-guest'
@@ -19,13 +20,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(data.session)
       setUser(data.session?.user ?? null)
       setLoading(false)
+      if (data.session?.user) {
+        void pullRemoteProgress()
+      }
     })
-    const { data } = supabase.auth.onAuthStateChange((_event, next) => {
+    const { data } = supabase.auth.onAuthStateChange((event, next) => {
       setSession(next)
       setUser(next?.user ?? null)
       if (next?.user) {
         localStorage.removeItem(GUEST_KEY)
         setGuest(false)
+        void pullRemoteProgress()
+      } else if (event === 'SIGNED_OUT') {
+        useProgressStore.getState().resetLocal()
       }
     })
     return () => data.subscription.unsubscribe()
@@ -60,6 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await supabase?.auth.signOut()
         localStorage.removeItem(GUEST_KEY)
         setGuest(false)
+        useProgressStore.getState().resetLocal()
       },
       resetPassword: async (email) => {
         if (!supabase) return { error: 'Supabase is not configured.' }
