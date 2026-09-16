@@ -1,7 +1,18 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ArrowLeft, CheckCircle2, GraduationCap, Info, Lock, Mail, User } from 'lucide-react'
+import {
+  ArrowLeft,
+  CheckCircle2,
+  Cloud,
+  GraduationCap,
+  Lock,
+  Mail,
+  Sparkles,
+  User,
+  UserCheck,
+} from 'lucide-react'
 import { Seo } from '@/components/Seo'
+import { SupabaseConfigModal } from '@/components/SupabaseConfigModal'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -17,7 +28,7 @@ export function LoginPage() {
   const [success, setSuccess] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
-  const { signIn, signUp, continueAsGuest, configured } = useAuth()
+  const { user, signIn, signUp, signInAsDemo, continueAsGuest, signOut, configured } = useAuth()
   const navigate = useNavigate()
 
   async function handleSubmit(e: React.FormEvent) {
@@ -39,8 +50,28 @@ export function LoginPage() {
         if (res.error) {
           setError(res.error)
         } else {
-          setSuccess('Account created! Please check your email to verify or continue as guest.')
+          if (configured) {
+            setSuccess('Account created! Please check your email to verify.')
+          } else {
+            navigate('/learn')
+          }
         }
+      }
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  async function handleDemo() {
+    setError(null)
+    setSuccess(null)
+    setSubmitting(true)
+    try {
+      const res = await signInAsDemo()
+      if (res.error) {
+        setError(res.error)
+      } else {
+        navigate('/learn')
       }
     } finally {
       setSubmitting(false)
@@ -52,9 +83,67 @@ export function LoginPage() {
     navigate('/learn')
   }
 
+  if (user) {
+    const userDisplay =
+      (user.user_metadata?.display_name as string | undefined) || user.email || 'Scholar'
+
+    return (
+      <div className="mx-auto max-w-md py-8">
+        <Seo title="Account — ROM LATEX" description="Your ROM LATEX learning account." />
+
+        <div className="mb-6">
+          <Button asChild variant="ghost" size="sm">
+            <Link to="/">
+              <ArrowLeft className="mr-1.5 h-4 w-4" />
+              Back to home
+            </Link>
+          </Button>
+        </div>
+
+        <Card className="border-border shadow-lg">
+          <CardHeader className="text-center">
+            <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+              <UserCheck className="h-6 w-6" />
+            </div>
+            <CardTitle className="font-serif text-2xl font-bold">You are signed in</CardTitle>
+            <CardDescription>
+              Logged in as <span className="font-semibold text-foreground">{userDisplay}</span>
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="rounded-lg border border-border bg-muted/30 p-3.5 text-xs text-muted-foreground">
+              <p className="font-medium text-foreground">
+                {configured ? 'Cloud Synced Account' : 'Local Offline Profile'}
+              </p>
+              <p className="mt-0.5">
+                {user.email ? `Email: ${user.email}` : 'Local Account'}
+              </p>
+            </div>
+
+            <div className="space-y-2 pt-2">
+              <Button asChild className="w-full">
+                <Link to="/learn">Continue to Curriculum</Link>
+              </Button>
+              <Button asChild variant="outline" className="w-full">
+                <Link to="/profile">View Profile & Settings</Link>
+              </Button>
+              <Button
+                variant="ghost"
+                className="w-full text-muted-foreground hover:text-destructive"
+                onClick={() => void signOut()}
+              >
+                Sign Out
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
   return (
     <div className="mx-auto max-w-md py-8">
-      <Seo title="Sign In — Learn LaTeX" description="Sign in or continue as guest to track your LaTeX learning journey." />
+      <Seo title="Sign In — ROM LATEX" description="Sign in or continue as guest to track your LaTeX learning journey." />
 
       <div className="mb-6">
         <Button asChild variant="ghost" size="sm">
@@ -75,26 +164,43 @@ export function LoginPage() {
           </CardTitle>
           <CardDescription>
             {mode === 'signin'
-              ? 'Sign in to sync your LaTeX lessons and drills'
+              ? 'Sign in to track your LaTeX lessons, drills, and notes'
               : 'Join to track progress, save bookmarks, and solve exercises'}
           </CardDescription>
         </CardHeader>
 
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-5">
           {!configured && (
-            <div className="rounded-lg border border-border bg-muted/60 p-3.5 text-xs text-muted-foreground">
-              <div className="flex items-start gap-2">
-                <Info className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
-                <div>
-                  <p className="font-medium text-foreground">Local Mode Active</p>
-                  <p className="mt-0.5">
-                    Supabase backend is in local demo mode. You can click &ldquo;Continue as Guest&rdquo; below to
-                    use the entire curriculum immediately with persistent browser storage.
+            <div className="rounded-lg border border-accent/30 bg-accent/5 p-3.5 text-xs">
+              <div className="flex items-start gap-2.5">
+                <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
+                <div className="space-y-1">
+                  <p className="font-semibold text-foreground">Local Mode Active</p>
+                  <p className="text-muted-foreground leading-relaxed">
+                    ROM LATEX works completely offline! You can sign in, register a local profile,
+                    use the one-click demo, or continue as guest.
                   </p>
                 </div>
               </div>
             </div>
           )}
+
+          {/* Quick 1-Click Demo Login */}
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full flex items-center justify-center gap-2 border-accent/40 bg-accent/5 hover:bg-accent/15"
+            onClick={handleDemo}
+            disabled={submitting}
+          >
+            <Sparkles className="h-4 w-4 text-accent" />
+            <span>Quick Demo Sign In (Scholar Ada)</span>
+          </Button>
+
+          <div className="relative my-2 text-center text-xs uppercase text-muted-foreground">
+            <span className="bg-card px-2">or with email credentials</span>
+            <div className="absolute inset-x-0 top-1/2 -z-10 h-px bg-border" />
+          </div>
 
           {error && (
             <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
@@ -201,8 +307,23 @@ export function LoginPage() {
           <Button type="button" variant="outline" className="w-full" onClick={handleGuest}>
             Continue as Guest (No signup required)
           </Button>
+
+          <div className="pt-2 text-center">
+            <SupabaseConfigModal
+              trigger={
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <Cloud className="h-3.5 w-3.5 text-accent" />
+                  <span>{configured ? 'Supabase Connected' : 'Configure Supabase Cloud Sync (Optional)'}</span>
+                </button>
+              }
+            />
+          </div>
         </CardContent>
       </Card>
     </div>
   )
 }
+

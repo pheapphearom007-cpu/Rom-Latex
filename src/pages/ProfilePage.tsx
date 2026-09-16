@@ -38,6 +38,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { EXERCISES } from '@/data/exercises'
 import { LESSONS } from '@/data/lessons'
+import { SupabaseConfigModal } from '@/components/SupabaseConfigModal'
 import { useAuth } from '@/features/auth/use-auth'
 import { supabase } from '@/lib/supabase'
 import { formatMinutes } from '@/lib/utils'
@@ -45,7 +46,7 @@ import { pullRemoteProgress, pushRemoteProgress, useProgressStore } from '@/stor
 import { useThemeStore } from '@/stores/theme-store'
 
 export function ProfilePage() {
-  const { user, signOut, configured } = useAuth()
+  const { user, signOut, configured, updateProfile } = useAuth()
   const preference = useThemeStore((s) => s.preference)
   const setPreference = useThemeStore((s) => s.setPreference)
 
@@ -66,7 +67,9 @@ export function ProfilePage() {
   const [displayName, setDisplayName] = useState(
     () => (user?.user_metadata?.display_name as string | undefined) || user?.email?.split('@')[0] || '',
   )
-  const [bio, setBio] = useState('')
+  const [bio, setBio] = useState(
+    () => (user?.user_metadata?.bio as string | undefined) || '',
+  )
   const [isSavingProfile, setIsSavingProfile] = useState(false)
   const [profileMessage, setProfileMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null)
 
@@ -98,24 +101,15 @@ export function ProfilePage() {
 
   async function handleSaveProfile(e: React.FormEvent) {
     e.preventDefault()
-    if (!supabase || !user) return
+    if (!user) return
     setIsSavingProfile(true)
     setProfileMessage(null)
     try {
       const trimmedName = displayName.trim()
       const trimmedBio = bio.trim()
 
-      const { error } = await supabase.from('profiles').upsert({
-        id: user.id,
-        display_name: trimmedName,
-        bio: trimmedBio,
-        updated_at: new Date().toISOString(),
-      })
-      if (error) throw error
-
-      await supabase.auth.updateUser({
-        data: { display_name: trimmedName },
-      })
+      const res = await updateProfile({ displayName: trimmedName, bio: trimmedBio })
+      if (res.error) throw new Error(res.error)
 
       setProfileMessage({ text: 'Profile updated successfully!', type: 'success' })
       window.setTimeout(() => setProfileMessage(null), 3000)
@@ -128,14 +122,18 @@ export function ProfilePage() {
   }
 
   async function handleManualSync() {
-    if (!supabase || !user) return
+    if (!user) return
     setIsSyncing(true)
     setSyncNotice(null)
     try {
-      await pullRemoteProgress()
-      await pushRemoteProgress()
-      setSyncNotice('Progress successfully synced with cloud!')
-      window.setTimeout(() => setSyncNotice(null), 3000)
+      if (configured && supabase) {
+        await pullRemoteProgress()
+        await pushRemoteProgress()
+        setSyncNotice('Progress successfully synced with cloud!')
+      } else {
+        setSyncNotice('All progress and notes are saved securely in local storage. Connect Supabase to sync across devices.')
+      }
+      window.setTimeout(() => setSyncNotice(null), 3500)
     } catch {
       setSyncNotice('Failed to sync. Please check your internet connection.')
       window.setTimeout(() => setSyncNotice(null), 4000)
@@ -143,6 +141,7 @@ export function ProfilePage() {
       setIsSyncing(false)
     }
   }
+
 
   function handleThemeChange(key: 'system' | 'light' | 'dark') {
     setPreference(key)
@@ -217,13 +216,14 @@ export function ProfilePage() {
           <CardContent className="space-y-5">
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant={user ? 'success' : 'secondary'}>
-                {user ? 'Cloud Synced' : 'Guest Account'}
+                {user ? (user.app_metadata?.provider === 'local' ? 'Local Account' : 'Cloud Synced') : 'Guest Account'}
               </Badge>
               {configured ? (
                 <Badge variant="outline">Supabase Connected</Badge>
               ) : (
-                <Badge variant="outline">Offline / Demo Mode</Badge>
+                <Badge variant="outline">Offline / Local Storage</Badge>
               )}
+              <SupabaseConfigModal />
             </div>
 
             {user ? (
@@ -321,12 +321,13 @@ export function ProfilePage() {
                 <p className="font-medium">Want to sync your progress across devices?</p>
                 <p className="mt-1 text-xs text-muted-foreground">
                   You are currently using local storage. All your lessons, bookmarks, and exercises are safely saved here.
-                  You can create an account anytime to enable cloud syncing.
+                  You can create a local account or sign in to personalize your profile, or configure Supabase for cloud sync.
                 </p>
-                <div className="mt-3">
+                <div className="mt-3 flex flex-wrap items-center gap-3">
                   <Button asChild size="sm">
                     <Link to="/login">Sign in or Create account</Link>
                   </Button>
+                  <SupabaseConfigModal />
                 </div>
               </div>
             )}

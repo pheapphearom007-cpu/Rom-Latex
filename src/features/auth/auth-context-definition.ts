@@ -10,8 +10,11 @@ export type AuthContextValue = {
   continueAsGuest: () => void
   signUp: (email: string, password: string, displayName: string) => Promise<{ error?: string }>
   signIn: (email: string, password: string) => Promise<{ error?: string }>
+  signInAsDemo: () => Promise<{ error?: string }>
   signOut: () => Promise<void>
   resetPassword: (email: string) => Promise<{ error?: string }>
+  updateProfile: (updates: { displayName?: string; bio?: string }) => Promise<{ error?: string }>
 }
 
 export const AuthContext = createContext<AuthContextValue | null>(null)
+
